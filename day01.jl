@@ -12,23 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-function parse_input(s)
-    [sum(map(c -> parse(Int, c), split(elf))) for elf in split(s, "\n\n")]
+function get_input(filename)
+    open(filename) do f
+        elves = Array{Array{Int}}(undef, 0)
+        elf = Array{Int}(undef, 0)
+        while ! eof(f)
+            line = readline(f)
+            if line == ""
+                push!(elves, elf)
+                elf = Int[]
+            else
+                push!(elf, parse(Int, line))
+            end
+        end
+    end
+    elves
 end
 
-get_input(filename) = read(filename, String)
-
-function part1(s)
-    maximum(parse_input(s))
+function part1(input_file = "day01input.txt")
+    elves = get_input(input_file)
+    maximum(sum.(elves))
 end
 
-function part2(s)
-    elves = parse_input(s)
-    n = length(elves)
-    sum(partialsort(elves, n-2:n))
+function part2(input_file = "day01input.txt")
+    elves = get_input(input_file)
+    calories = sum.(elves)
+    n = length(calories)
+    sum(partialsort(calories, n-2:n))
 end
 
-input = get_input("day01input.txt")
-part1(input)
-part2(input)
+function bothparts(input_file = "day01input.txt")
+    elves = get_input(input_file)
+    calories = sum.(elves)
+    n = length(calories)
+    top3 = sum(partialsort(calories, n-2:n))
+    (maximum(sum.(elves)), top3)
+end
