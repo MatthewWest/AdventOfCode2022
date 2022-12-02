@@ -17,9 +17,9 @@ module AdventOfCode
 export get_input, clear_input_cache, give_answer
 
 using Dates: value
-using HTTP: get
+using HTTP: get, HTTP
 using JSON: JSON, json, parsefile, print
-using TimeZones: TimeZone, ZonedDateTime
+using TimeZones: TimeZone, ZonedDateTime, localzone, now
 
 _get_cache_directory() = joinpath(homedir(), ".advent-of-code")
 _get_cookie_cache_path() = joinpath(_get_cache_directory(), "session-cookie.txt")
