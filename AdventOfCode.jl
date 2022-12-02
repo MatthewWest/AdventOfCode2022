@@ -17,9 +17,12 @@ module AdventOfCode
 export get_input, clear_input_cache, give_answer
 
 using Dates: value
-using HTTP: get, HTTP
+import HTTP
 using JSON: JSON, json, parsefile, print
 using TimeZones: TimeZone, ZonedDateTime, localzone, now
+
+HEADERS = ["User-Agent" => "github.com/MatthewWest/AdventOfCode2022 by matthewwest217@gmail.com"]
+
 
 _get_cache_directory() = joinpath(homedir(), ".advent-of-code")
 _get_cookie_cache_path() = joinpath(_get_cache_directory(), "session-cookie.txt")
@@ -62,7 +65,7 @@ end
 
 function _get_puzzle_page(year, day)
     url = "https://adventofcode.com/$(year)/day/$(day)"
-    r = HTTP.get(url; cookies=_get_cookies())
+    r = HTTP.get(url, HEADERS; cookies=_get_cookies())
     return String(r.body)
 end
 
@@ -103,7 +106,7 @@ function get_input(year, day)
     end
 
     url = "https://adventofcode.com/$(year)/day/$(day)/input"
-    r = HTTP.get(url; status_exception=false, cookies=_get_cookies())
+    r = HTTP.get(url, HEADERS; status_exception=false, cookies=_get_cookies())
     
     if r.status == 200
         _write_input_cache(year, day, r)
@@ -139,7 +142,7 @@ function _submit_answer_to_aoc(year, day, part, answer)
     GOOD_ANSWER_KEY = "That's the right answer!"
 
     url = "https://adventofcode.com/$(year)/day/$(day)/answer"
-    r = HTTP.post(url;
+    r = HTTP.post(url, HEADERS;
                     body=Dict("level" => part, "answer" => "$(answer)"),
                     cookies=_get_cookies())
     rbody = String(r.body)
