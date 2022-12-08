@@ -139,7 +139,7 @@ function visible_dir(grid, coord, step)
 	x, y = coord
 	dx, dy = step
 	xi, yi = x + dx, y + dy
-	while xi >= 1 && xi <= size(grid, 1) && yi >= 1 && yi <= size(grid, 2)
+	while checkbounds(Bool, grid, xi, yi)
 		if grid[xi, yi] >= height
 			return false
 		end
@@ -164,11 +164,9 @@ end
 function part1(s = input)
 	grid = parse_input(s)
 	n = 0
-	for i ∈ 1:size(grid, 1)
-		for j ∈ 1:size(grid, 2)
-			if visible(grid, (i, j))
-				n += 1
-			end
+	for I ∈ CartesianIndices(grid)
+		if visible(grid, Tuple(I))
+			n += 1
 		end
 	end
 	n
@@ -184,7 +182,7 @@ function count_trees_dir(grid, coord, step)
 	dx, dy = step
 	xi, yi = x + dx, y + dy
 	n = 0
-	while xi >= 1 && xi <= size(grid, 1) && yi >= 1 && yi <= size(grid, 2)
+	while checkbounds(Bool, grid, xi, yi)
 		n += 1
 		if grid[xi, yi] >= height
 			break
@@ -209,13 +207,11 @@ function part2(s = input)
 	grid = parse_input(s)
 	highest_coord = (nothing, nothing)
 	highest = -1
-	for i ∈ 1:size(grid, 1)
-		for j ∈ 1:size(grid, 2)
-			score = scenic_score(grid, (i, j))
-			if score > highest
-				highest = score
-				highest_coord = (i, j)
-			end
+	for I ∈ CartesianIndices(grid)
+		score = scenic_score(grid, Tuple(I))
+		if score > highest
+			highest = score
+			highest_coord = I
 		end
 	end
 	highest
