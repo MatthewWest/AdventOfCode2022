@@ -204,13 +204,11 @@ end
 # ╔═╡ ef662ac2-fc1c-4c7e-830a-ee4e2a71b646
 function part2(s = input)
 	grid = parse_input(s)
-	highest_coord = (nothing, nothing)
 	highest = -1
 	for I ∈ CartesianIndices(grid)
 		score = scenic_score(grid, Tuple(I))
 		if score > highest
 			highest = score
-			highest_coord = I
 		end
 	end
 	highest
@@ -218,22 +216,6 @@ end
 
 # ╔═╡ eb42457e-5798-414f-8118-ac03fac31f8c
 part2()
-
-# ╔═╡ 00000000-0000-0000-0000-000000000001
-PLUTO_PROJECT_TOML_CONTENTS = """
-[deps]
-"""
-
-# ╔═╡ 00000000-0000-0000-0000-000000000002
-PLUTO_MANIFEST_TOML_CONTENTS = """
-# This file is machine-generated - editing it directly is not advised
-
-julia_version = "1.8.3"
-manifest_format = "2.0"
-project_hash = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
-
-[deps]
-"""
 
 # ╔═╡ Cell order:
 # ╟─11b68808-76b5-11ed-16ba-512914043c0b
@@ -247,5 +229,3 @@ project_hash = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 # ╠═3c81c886-38d4-4f3a-8afb-5e0df12e3180
 # ╠═ef662ac2-fc1c-4c7e-830a-ee4e2a71b646
 # ╠═eb42457e-5798-414f-8118-ac03fac31f8c
-# ╟─00000000-0000-0000-0000-000000000001
-# ╟─00000000-0000-0000-0000-000000000002
