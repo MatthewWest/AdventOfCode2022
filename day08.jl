@@ -151,7 +151,6 @@ end
 
 # ╔═╡ 7fd0ae59-bc8d-42a7-8fc9-c8b01d391799
 function visible(grid, coord)
-	height = grid[coord...]
 	for step ∈ [(1, 0), (-1, 0), (0, 1), (0, -1)]
 		if visible_dir(grid, coord, step)
 			return true
