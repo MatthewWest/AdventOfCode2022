@@ -1,4 +1,4 @@
-using .AdventOfCode2022
+using AdventOfCode2022
 using Test
 
 @testset "Day 1" begin
@@ -119,4 +119,28 @@ end
 35390"""
     @test AdventOfCode2022.Day08.part1(test_input) == 21
     @test AdventOfCode2022.Day08.part2(test_input) == 8
+end
+
+
+@testset "Day 9" begin
+    test_input1 = """R 4
+    U 4
+    L 3
+    D 1
+    R 4
+    D 1
+    L 5
+    R 2"""
+    @test AdventOfCode2022.Day09.part1(test_input1) == 13
+
+    @test AdventOfCode2022.Day09.part2(test_input1) == 1
+    test_input2 = """R 5
+    U 8
+    L 8
+    D 3
+    R 17
+    D 10
+    L 25
+    U 20"""
+    @test AdventOfCode2022.Day09.part2(test_input2) == 36
 end
