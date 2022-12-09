@@ -11,40 +11,36 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+module Day01
+export part1, part2
 
-function get_input(filename)
-    open(filename) do f
-        elves = Array{Array{Int}}(undef, 0)
-        elf = Array{Int}(undef, 0)
-        while ! eof(f)
-            line = readline(f)
-            if line == ""
-                push!(elves, elf)
-                elf = Int[]
-            else
-                push!(elf, parse(Int, line))
-            end
+INPUT_PATH = joinpath(@__DIR__, "../data/day01.txt")
+
+function parse_input(s)
+    elves = Array{Array{Int}}(undef, 0)
+    elf = Array{Int}(undef, 0)
+    lines = split(s, "\n")
+    for line ∈ lines
+        if line == ""
+            push!(elves, elf)
+            elf = Int[]
+        else
+            push!(elf, parse(Int, line))
         end
     end
     elves
 end
 
-function part1(input_file = "day01input.txt")
-    elves = get_input(input_file)
+function part1(input = read(INPUT_PATH, String))
+    elves = parse_input(input)
     maximum(sum.(elves))
 end
 
-function part2(input_file = "day01input.txt")
-    elves = get_input(input_file)
+function part2(input = read(INPUT_PATH, String))
+    elves = parse_input(input)
     calories = sum.(elves)
     n = length(calories)
     sum(partialsort(calories, n-2:n))
 end
 
-function bothparts(input_file = "day01input.txt")
-    elves = get_input(input_file)
-    calories = sum.(elves)
-    n = length(calories)
-    top3 = sum(partialsort(calories, n-2:n))
-    (maximum(sum.(elves)), top3)
-end
+end # module Day01

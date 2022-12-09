@@ -1,3 +1,8 @@
+module Day02
+export part1, part2
+
+INPUT_PATH = joinpath(@__DIR__, "../data/day02.txt")
+
 function result1(opp, me)
     if opp == "A"
         if me == "X"
@@ -41,12 +46,12 @@ function score1(round)
     result1(opp, me) + choice_score(me)
 end
 
-function part1()
-    rounds = readlines("day02input.txt")
+function part1(input = read(INPUT_PATH, String))
+    rounds = split(rstrip(input), "\n")
     sum(map(score1, rounds))
 end
 
-function choice_score(me)
+function choice_score2(me)
     if me == "A"
         return 1
     elseif me == "B"
@@ -92,10 +97,12 @@ end
 function score2(round)
     opp, result = split(round, " ")
     me = get_choice(opp, result)
-    result_score(result) + choice_score(me)
+    result_score(result) + choice_score2(me)
 end
 
-function part2()
-    rounds = readlines("day02input.txt")
+function part2(input = read(INPUT_PATH, String))
+    rounds = split(rstrip(input), "\n")
     sum(map(score2, rounds))
 end
+
+end # module Day02
