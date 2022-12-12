@@ -302,7 +302,7 @@ end
     ######......######......######......####
     #######.......#######.......#######.....
     """
-    @test AdventOfCode2022.Day10.part2(test_input) == part2_test_output
+    @test AdventOfCode2022.Day10.part2(test_input; print=false) == part2_test_output
 end
 
 @testset "Day 11" begin
@@ -337,4 +337,17 @@ Test: divisible by 17
 """
     @test AdventOfCode2022.Day11.part1(test_input) == 10605
     @test AdventOfCode2022.Day11.part2(test_input) == 2713310158
+end
+
+@testset "Day 12" begin
+    test_input =
+    """
+    Sabqponm
+    abcryxxl
+    accszExk
+    acctuvwj
+    abdefghi    
+    """
+    @test AdventOfCode2022.Day12.part1(test_input) == 31
+    @test AdventOfCode2022.Day12.part2(test_input) == 29
 end

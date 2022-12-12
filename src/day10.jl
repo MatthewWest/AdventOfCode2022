@@ -70,7 +70,6 @@ function run_program(program; interesting=c -> false, run_each_cycle=s -> nothin
         start_tick!(state, program)
         if interesting(state.cycle)
             push!(signal_strengths, state.cycle * state.X)
-            println("cycle $(state.cycle), X = $(state.X), signal_strength = $(state.X * state.cycle)")
         end
         run_each_cycle(state)
         end_tick!(state)
@@ -102,14 +101,16 @@ function string_state(state::State)
     s
 end
 
-function part2(input = read(INPUT_PATH, String))
+function part2(input = read(INPUT_PATH, String); print=true)
     program = parse_input(input)
     s = ""
     function accumulate_output(state::State)
         s *= string_state(state)
     end
     run_program(program; run_each_cycle = accumulate_output)
-    print(s)
+    if print
+        print(s)
+    end
     s
 end
 
