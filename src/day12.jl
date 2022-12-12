@@ -76,8 +76,8 @@ end
 
 function part1(input = read(INPUT_PATH, String))
     map, start, dest = parse_input(strip(input))
-    path = a_star(map, manhattan_dist, start, dest)
-    length(path) - 1
+    # length(a_star(map, manhattan_dist, start, dest)) - 1
+    bfs(map, start, (_, p) -> p == dest; get_neighbors=neighbors) - 1
 end
 
 iszero(map::Array{Int, 2}, p::CartesianIndex) = map[p] == 0
@@ -103,7 +103,7 @@ function path_length(p::CartesianIndex, came_from)
     n
 end
 
-function bfs(map, start::CartesianIndex, end_cond::Function)
+function bfs(map, start::CartesianIndex, end_cond::Function; get_neighbors=neighbors_down)
     q = Queue{CartesianIndex}()
     visited = Set{CartesianIndex}()
     from = Dict{CartesianIndex, CartesianIndex}()
@@ -115,7 +115,7 @@ function bfs(map, start::CartesianIndex, end_cond::Function)
         if end_cond(map, p)
             return path_length(p, from)
         end
-        for n ∈ neighbors_down(map, p)
+        for n ∈ get_neighbors(map, p)
             if n ∉ visited
                 push!(visited, n)
                 from[n] = p
