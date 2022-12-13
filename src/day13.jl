@@ -60,4 +60,4 @@ function part2(input = read(INPUT_PATH, String))
     div1 * div2
 end
 
-end # module Day13e
+end # module Day13
