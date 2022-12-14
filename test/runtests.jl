@@ -380,3 +380,13 @@ end
     @test AdventOfCode2022.Day13.part1(test_input) == 13
     @test AdventOfCode2022.Day13.part2(test_input) == 140
 end
+
+@testset "Day 14" begin
+    test_input =
+    """
+    498,4 -> 498,6 -> 496,6
+    503,4 -> 502,4 -> 502,9 -> 494,9
+    """
+    @test AdventOfCode2022.Day14.part1(test_input) == 24
+    @test AdventOfCode2022.Day14.part2(test_input) == 93
+end
