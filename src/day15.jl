@@ -2,6 +2,8 @@ module Day15
 
 INPUT_PATH = joinpath(@__DIR__, "../data/day15.txt")
 
+using GeometryBasics
+using LinearAlgebra: det
 using OffsetArrays
 using Plots
 
@@ -194,6 +196,98 @@ function part2_try5(input = read(INPUT_PATH, String); mincoord=0, maxcoord=40000
     end
 end
 
-part2 = part2_try5
+function find_open_line(s1, s2, dists)
+    points = CartesianIndex[]
+    d1 = dists[s1] + 1
+    d2 = dists[s2] + 1 
+    push!(points, [CartesianIndex(Tuple(s1) .+ δ) for δ ∈ [(0, d1), (0, -d1), (d1, 0), (-d1, 0)]]...)
+    push!(points, [CartesianIndex(Tuple(s2) .+ δ) for δ ∈ [(0, d2), (0, -d2), (d2, 0), (-d2, 0)]]...)
+    
+    endpoints = filter(p -> manhattan_dist(s1, p) == d1 && manhattan_dist(s2, p) == d2, points)
+    @assert length(endpoints) == 2
+    Tuple(endpoints)
+end
+
+function tuning_frequency(point)
+    point[1] * 4000000 + point[2]
+end
+
+function intersects(a::Tuple{CartesianIndex, CartesianIndex}, b::Tuple{CartesianIndex, CartesianIndex})
+    # destructure vertices
+    v1, v2 = a
+    v3, v4 = b
+    # find slopes
+    ma = (v2[2] - v1[2]) / (v2[1] - v1[1])
+    mb = (v4[2] - v3[2]) / (v4[1] - v3[1])
+
+    # Point-slope form is
+    # y - y1 = m(x - x1)
+    #
+    # Replace m with its definition
+    # y - y1 = ((y2 - y1) / (x2 - x1))(x - x1)
+    #
+    # Multiply out (x2 - x1)
+    # y(x2 - x1) - y1(x2 - x1) = x(y2 - y1) - x1(y2 - y1)
+    #
+    # Move constants to the right, x and y to the left
+    # (y1 - y2) * x + (x2 - x1) * y = y1(x2 - x1) - x1(y2 - y1)
+    #
+    # Let the system of equations be AX = B where A is the square matrix of coefficients,
+    # X is the variables, and B is the column matrix of constants
+    A = [
+        (v1[2] - v2[2]) (v2[1] - v1[1]);
+        (v3[2] - v4[2]) (v4[1] - v3[1])
+    ]
+    B = [
+        v1[2] * (v2[1] - v1[1]) - v1[1] * (v2[2] - v1[2]);
+        v3[2] * (v4[1] - v3[1]) - v3[1] * (v4[2] - v3[2])
+    ]
+
+    # If the determinant if 0, the lines are parallel
+    D = det(A)
+    if D == 0
+        return false, nothing
+    end
+
+    # Apply cramer's rule
+    D1 = det(hcat(B, A[:, 2]))
+    D2 = det(hcat(A[:, 1], B))
+    x, y = D1 / D, D2 / D
+    @assert isinteger(x) && isinteger(y)
+    return true, CartesianIndex(Int(x), Int(y))
+end
+
+function part2_efficient(input = read(INPUT_PATH, String); mincoord=0, maxcoord=4000000)
+    nearest_beacons = parse_input(input)
+    sensors = collect(keys(nearest_beacons))
+    dists = Dict{CartesianIndex, Int}(a => manhattan_dist(a, b) for (a, b) ∈ nearest_beacons)
+    solution_space = CartesianIndices((mincoord:maxcoord, mincoord:maxcoord))
+
+    lines = Tuple{CartesianIndex, CartesianIndex}[]
+    n = length(sensors)
+    for i ∈ 1:n-1
+        for j ∈ i+1:n
+            # println("($i, $j)")
+            sa, sb = sensors[i], sensors[j]
+            ba, bb = nearest_beacons[sa], nearest_beacons[sb]
+            if manhattan_dist(sa, sb) == manhattan_dist(sa, ba) + 2 + manhattan_dist(sb, bb)
+                push!(lines, find_open_line(sa, sb, dists))
+            end
+        end
+    end
+    # Find intersections
+    nlines = length(lines)
+    for i ∈ 1:nlines - 1
+        for j ∈ i+1:nlines
+            found, point = intersects(lines[i], lines[j])
+            if found && point ∈ solution_space
+                return tuning_frequency(point)
+            end
+        end
+    end
+    return nothing
+end
+
+part2 = part2_efficient
 
 end # module Day15
