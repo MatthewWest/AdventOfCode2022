@@ -1,5 +1,8 @@
 module Day16
 using DataStructures
+using StructEquality
+
+import Base.isequal, Base.hash
 
 INPUT_PATH = joinpath(@__DIR__, "../data/day16.txt")
 
@@ -173,10 +176,93 @@ end
 struct EfficientState
     pos::Int
     opened::BitSet
+    flow_per_minute::Int
     minutes::Int
 end
 
-function part1_try3(input = read(INPUT_PATH, String))
+# This function is an unfortunate workaround for the fact that Julia uses
+# object IDs for hash and isequal on a struct (even an immutable struct).
+# Tuple doesn't behave this way, so I can transform a state to a tuple to
+# get dictionaries to behave as expected.
+function key(state::EfficientState)
+    (state.pos, state.opened, state.flow_per_minute, state.minutes)
+end
+
+function reconstruct_path(prev::Dict{Tuple{Int, BitSet, Int, Int}, EfficientState}, last::Tuple{Int, BitSet, Int, Int})
+    state = EfficientState(last[1], last[2], last[3], last[4])
+    path = EfficientState[]
+    while state !== nothing
+        pushfirst!(path, state)
+        state = get(prev, key(state), nothing)
+    end
+    path
+end
+
+function print_path(path, names, flows, minutes)
+    for state ∈ path
+        if state === nothing
+            continue
+        end
+        println("== Minute $(minutes - state.minutes + 1) ==")
+        println("At valve $(names[state.pos])")
+        println("Valves $(map(i -> names[i], collect(state.opened))) are open, releasing $(sum(flows[i] for i ∈ state.opened; init=0)) pressure.\n")
+    end
+end
+
+function print_allpaths(D, names)
+    print("  ")
+    for i ∈ axes(D, 2)
+        print(" $(names[i][1])")
+    end
+    print('\n')
+    for y ∈ axes(D, 2)
+        print("$(names[y])")
+        for x ∈ axes(D, 1)
+            print(" $(D[x, y])")
+        end
+        print('\n')
+    end
+end
+
+function get_neighbors3(state, flows, ds, nonzero_flows)
+    neighbors = EfficientState[]
+    # If we're at a valve with 0 flow or a valve we've already opened, move on.
+    if flows[state.pos] == 0 || state.pos ∈ state.opened
+        for (i, f) ∈ enumerate(flows)
+            # Consider moving to another node if it:
+            # - isn't where we're at currently
+            # - isn't already open
+            # - has a non-zero flow
+            # - we can move to it within the number of minutes
+            if i != state.pos && i ∉ state.opened && f != 0 && ds[i] < state.minutes
+                n = EfficientState(i, state.opened, state.flow_per_minute, state.minutes - ds[i])
+                push!(neighbors, n)
+            end
+        end
+    else
+        # If we're at a closed valve with >0 flow, open it.
+        n = EfficientState(
+            state.pos,
+            union(state.opened, state.pos),
+            state.flow_per_minute + flows[state.pos],
+            state.minutes - 1)
+        push!(neighbors, n)
+    end
+
+    # If we're done opening all the valves but there are still minutes left, go to the end.
+    if state.opened == nonzero_flows && state.minutes > 0
+        n = EfficientState(
+            state.pos,
+            state.opened,
+            state.flow_per_minute,
+            0
+        )
+        push!(neighbors, n)
+    end
+    neighbors
+end
+
+function part1_try3(input = read(INPUT_PATH, String); minutes=30, print=false)
     valves = parse_input(input)
     n = length(valves)
 
@@ -208,49 +294,107 @@ function part1_try3(input = read(INPUT_PATH, String))
     nonzero_flows = BitSet(findall(f -> f > 0, flows))
 
     # BFS through the valves with nonzero flows
-    to_visit = Queue{EfficientState}()
-    initial = EfficientState(rows["AA"], BitSet(), 30)
-    println("Initial state is $initial")
-    enqueue!(to_visit, initial)
-    best_total_flows = Dict{EfficientState, Int}()
-    best_total_flows[initial] = 0
-    
-    while !isempty(to_visit)
-        state = dequeue!(to_visit)
-        # println("At $(names[state.pos]), total flow earned so far is $(best_total_flows[state])")
+    Q = Queue{EfficientState}()
+    explored = Set{Tuple{Int, BitSet, Int, Int}}()
+    root = EfficientState(rows["AA"], BitSet(), 0, minutes)
+    push!(explored, key(root))
+    enqueue!(Q, root)
+
+    total_flows = Dict{Tuple{Int, BitSet, Int, Int}, Int}()
+    total_flows[key(root)] = 0
+    prev = Dict{Tuple{Int, BitSet, Int, Int}, EfficientState}()
+
+    while !isempty(Q)
+        state = dequeue!(Q)
 
         # Add neighbor states attained by moving
-        ds = D[state.pos, :]
-        # If we're at a valve we could open, don't move on unless it's opened
-        if state.pos ∈ state.opened
-            for (i, f) ∈ enumerate(flows)
-                # Consider moving to another node if it:
-                # - isn't already open
-                # - has a non-zero flow
-                # - we can move to it within the number of minutes
-                if i ∈ state.opened || f == 0 || ds[i] >= state.minutes
-                    continue
-                end
-                n = EfficientState(i, state.opened, state.minutes - ds[i])
-                # Explore the neighbor if we haven't reached that state yet
-                if n ∉ keys(best_total_flows)
-                    best_total_flows[n] = best_total_flows[state]
-                    enqueue!(to_visit, n)
-                end
+        neighbors = get_neighbors3(state, flows, D[state.pos, :], nonzero_flows)
+        for n ∈ neighbors
+            kn = key(n)
+            if kn ∉ explored
+                total_flows[kn] = total_flows[key(state)] + state.flow_per_minute * (state.minutes - n.minutes)
+                prev[kn] = state
+                enqueue!(Q, n)
             end
-        end
-        # Add neighbor state attained by opening the valve if the current position isn't open
-        if state.pos ∉ state.opened
-            n = EfficientState(state.pos, union(state.opened, state.pos), state.minutes)
-            best_total_flows[n] = best_total_flows[state] + n.minutes * flows[n.pos]
-            # If we've opened all the valves with nonzero flow, don't keep searching.
-            if n.opened == nonzero_flows
-                continue
-            end
-            enqueue!(to_visit, n)
         end
     end
-    maximum(values(best_total_flows))
+    best_last = nothing
+    best_total_flow = 0
+    for pair ∈ total_flows
+        last, total_flow = pair
+        if total_flow > best_total_flow
+            best_last = last
+            best_total_flow = total_flow
+        end
+    end
+    path = reconstruct_path(prev, best_last)
+    print_path(path, names, flows, minutes)
+    best_total_flow
+end
+
+function flow_this_round(flows::Vector{Int}, opened::BitSet)
+    n = 0
+    for valve ∈ opened
+        n += flows[valve]
+    end
+    n
+end
+
+function find_best_recursive(pos::Int, flows::Vector{Int}, opened::BitSet, minutes_remaining::Int, pressure_released_so_far::Int, nonzero_flows::BitSet, D)
+    # base case
+    if minutes_remaining == 0
+        return pressure_released_so_far
+    elseif minutes_remaining == 1
+        return pressure_released_so_far + flow_this_round(flows, opened)
+    elseif flows[pos] > 0 && pos ∉ opened
+        return find_best_recursive(pos, flows, union(opened, pos), minutes_remaining - 1, pressure_released_so_far + flow_this_round(flows, opened), nonzero_flows, D)
+    else
+        ds = D[pos, :]
+        best_total_flow = 0
+        best_move = nothing
+        for next ∈ setdiff(nonzero_flows, opened)
+            total_flow = find_best_recursive(pos, flows, opened, minutes_remaining - ds[next], pressure_released_so_far + flow_this_round(flows, opened), nonzero_flows, D)
+            if total_flow > best_total_flow
+                best_total_flow = total_flow
+                best_move = next
+            end
+        end
+        return best_total_flow
+    end
+end
+
+function part1_try4(input = read(INPUT_PATH, String); minutes=30, print=false)
+    valves = parse_input(input)
+    n = length(valves)
+
+    # Construct a mapping from row of adjacency matrix to name
+    names = Dict{Int, String}()
+    # a mapping from name to row of adjacency matrix
+    rows = Dict{String, Int}()
+    for (i, v) ∈ enumerate(keys(valves))
+        names[i] = v
+        rows[v] = i
+    end
+
+    # Construct an array where flows[i] = the flow_rate for row i in the adjacency matrix
+    flows = [valves[names[i]].flow_rate for i ∈ 1:n]
+
+    # Construct an adjacency matrix
+    W = fill(false, (n, n))
+    for i ∈ 1:n
+        row_valve = valves[names[i]]
+        for j ∈ 1:n
+            W[i, j] = names[j] ∈ row_valve.to
+        end
+    end
+
+    # Use the Floyd Warshall algorithm to find all-pairs shortest paths
+    D = floyd_warshall(W)
+
+    # Make a bitset of all the nonzero flows
+    nonzero_flows = BitSet(findall(f -> f > 0, flows))
+
+    find_best_recursive(rows["AA"], flows, BitSet(), minutes, 0, nonzero_flows, D)
 end
 
 end # module Day16
