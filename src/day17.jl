@@ -9,10 +9,11 @@ INPUT_PATH = joinpath(@__DIR__, "../data/day17.txt")
 mutable struct Moves{T}
     moves::Vector{T}
     i::Int
+    ncycles::Int
 end
 
 function parse_input(s)
-    Moves([c for c ∈ rstrip(s)], 1)
+    Moves([c for c ∈ rstrip(s)], 1, 0)
 end
 
 struct Shape
@@ -51,6 +52,9 @@ mutable struct Grid
     maxy::Int
 end
 
+function empty_grid()
+    Grid(Set{Tuple{Int, Int}}(), 0)
+end
 
 function move!(rock, grid, Δ)
     offset = (rock.minx-1, rock.miny-1) .+ Δ
@@ -116,7 +120,7 @@ function Base.show(io::IO, grid::Grid)
                 if (x, y) ∈ grid.rock_coords
                     print(io, '#')
                 else
-                    print(io, ' ')
+                    print(io, '.')
                 end
             end
         end
@@ -124,14 +128,26 @@ function Base.show(io::IO, grid::Grid)
     end
 end
 
-function part1(input = read(INPUT_PATH, String); rocks=2022)
+function part1(input = read(INPUT_PATH, String); rocks=2022, print=false)
     moves = parse_input(input)
-    grid = Grid(Set{Tuple{Int, Int}}(), 0)
+    grid = empty_grid()
     for i ∈ 1:rocks
         rock = settle_new_rock(moves, grid, shapes[((i-1) % 5) + 1])
         add_settled_rock!(grid, rock)
+        print && @show grid
     end
     grid.maxy
+end
+
+function part2(input = read(INPUT_PATH, String); rocks=1_000_000_000_000)
+    moves = parse_input(input)
+    grid = empty_grid()
+    for i ∈ 1:200
+        shape_index = ((i-1) % 5) + 1
+        rock = settle_new_rock(moves, grid, shapes[shape_index])
+        add_settled_rock!(grid, rock)
+    end
+    @show grid
 end
 
 end # module Day17
