@@ -427,3 +427,24 @@ end
     @test AdventOfCode2022.Day20.part1(test_input) == 3
     @test AdventOfCode2022.Day20.part2(test_input) == 1623178306
 end
+
+@testset "Day 21" begin
+    test_input = """root: pppw + sjmn
+    dbpl: 5
+    cczh: sllz + lgvd
+    zczc: 2
+    ptdq: humn - dvpt
+    dvpt: 3
+    lfqf: 4
+    humn: 5
+    ljgn: 2
+    sjmn: drzm * dbpl
+    sllz: 4
+    pppw: cczh / lfqf
+    lgvd: ljgn * ptdq
+    drzm: hmdt - zczc
+    hmdt: 32
+    """
+    @test AdventOfCode2022.Day21.part1(test_input) == 152
+    @test AdventOfCode2022.Day21.part2(test_input) == 301
+end
