@@ -179,7 +179,7 @@ function parse_side(map_array, origin, side_length)
     for I ∈ origin:(offset + CartesianIndex(side_length, side_length))
         side[I - offset] = parse_square(map_array[I])
     end
-    side
+    return side
 end
 
 # Following the numbering from the problem description
@@ -194,22 +194,39 @@ struct CubePosition
     facing::Facing
 end
 
-function build_adjacency()
+function build_adjacency(side_length)
     adjacency = Dict{Tuple{FaceAspect, Edge}, Tuple{FaceAspect, Edge}}()
-    edges = Dict([
-        (F_TOP, E_RIGHT) => (F_RIGHT, E_RIGHT),
-        (F_TOP, E_DOWN) => (F_FRONT, E_UP),
-        (F_TOP, E_LEFT) => (F_LEFT, E_UP),
-        (F_TOP, E_UP) => (F_BACK, E_UP),
-        (F_BACK, E_RIGHT) => (F_LEFT, E_LEFT),
-        (F_BACK, E_DOWN) => (F_BOTTOM, E_DOWN),
-        (F_BACK, E_LEFT) => (F_RIGHT, E_DOWN),
-        (F_LEFT, E_RIGHT) => (F_FRONT, E_LEFT),
-        (F_LEFT, E_DOWN) => (F_BOTTOM, E_LEFT),
-        (F_FRONT, E_RIGHT) => (F_RIGHT, E_UP),
-        (F_FRONT, E_DOWN) => (F_BOTTOM, E_UP),
-        (F_BOTTOM, E_RIGHT) => (F_RIGHT, E_LEFT),
-    ])
+    if side_length == 4
+        edges = Dict([
+            (F_TOP, E_RIGHT) => (F_RIGHT, E_RIGHT),
+            (F_TOP, E_DOWN) => (F_FRONT, E_UP),
+            (F_TOP, E_LEFT) => (F_LEFT, E_UP),
+            (F_TOP, E_UP) => (F_BACK, E_UP),
+            (F_BACK, E_RIGHT) => (F_LEFT, E_LEFT),
+            (F_BACK, E_DOWN) => (F_BOTTOM, E_DOWN),
+            (F_BACK, E_LEFT) => (F_RIGHT, E_DOWN),
+            (F_LEFT, E_RIGHT) => (F_FRONT, E_LEFT),
+            (F_LEFT, E_DOWN) => (F_BOTTOM, E_LEFT),
+            (F_FRONT, E_RIGHT) => (F_RIGHT, E_UP),
+            (F_FRONT, E_DOWN) => (F_BOTTOM, E_UP),
+            (F_BOTTOM, E_RIGHT) => (F_RIGHT, E_LEFT),
+        ])
+    elseif side_length == 50
+        edges = Dict([
+            (F_TOP, E_RIGHT) => (F_RIGHT, E_LEFT),
+            (F_TOP, E_DOWN) => (F_FRONT, E_UP),
+            (F_TOP, E_LEFT) => (F_LEFT, E_LEFT),
+            (F_TOP, E_UP) => (F_BACK, E_LEFT),
+            (F_BACK, E_RIGHT) => (F_BOTTOM, E_DOWN),
+            (F_BACK, E_DOWN) => (F_RIGHT, E_UP),
+            (F_BACK, E_UP) => (F_LEFT, E_DOWN),
+            (F_LEFT, E_RIGHT) => (F_BOTTOM, E_LEFT),
+            (F_LEFT, E_UP) => (F_FRONT, E_LEFT),
+            (F_FRONT, E_RIGHT) => (F_RIGHT, E_DOWN),
+            (F_FRONT, E_DOWN) => (F_BOTTOM, E_UP),
+            (F_BOTTOM, E_RIGHT) => (F_RIGHT, E_RIGHT),
+        ])
+    end
     for (e1, e2) ∈ edges
         adjacency[e1] = e2
         adjacency[e2] = e1
@@ -218,23 +235,38 @@ function build_adjacency()
 end
 
 function get_origins(side_length)
-    [
-        CartesianIndex(side_length*2 + 1, 1),
-        CartesianIndex(1, side_length+1),
-        CartesianIndex(side_length+1, side_length+1),
-        CartesianIndex(side_length*2 + 1, side_length+1),
-        CartesianIndex(side_length*2 + 1, side_length*2 + 1),
-        CartesianIndex(side_length*3 + 1, side_length*2 + 1),
-    ]
+    if side_length == 4
+        return [
+            CartesianIndex(side_length*2 + 1, 1), # Top
+            CartesianIndex(1, side_length+1), # Back
+            CartesianIndex(side_length+1, side_length+1), # Left
+            CartesianIndex(side_length*2 + 1, side_length+1), # Front
+            CartesianIndex(side_length*2 + 1, side_length*2 + 1), # Bottom
+            CartesianIndex(side_length*3 + 1, side_length*2 + 1), # Right
+        ]
+    elseif side_length == 50
+        return [
+            CartesianIndex(side_length + 1, 1), # Top
+            CartesianIndex(1, side_length*3 + 1), # Back
+            CartesianIndex(1, side_length*2 + 1), # Left
+            CartesianIndex(side_length + 1, side_length + 1), # Front
+            CartesianIndex(side_length + 1, side_length*2 + 1), # Bottom
+            CartesianIndex(side_length*2 + 1, 1), # Right
+        ]
+    else
+        @error("Unrecognized side length $side_length")
+    end
 end
 
 function parse_input2(s)
     map_string, path_string = split(rstrip(s), "\n\n")
     map_lines = split(map_string, "\n")
-    side_length = length(strip(map_lines[1]))
+    side_length_float = sqrt(count(c -> !isspace(c), map_string) // 6)
+    if isinteger(side_length_float)
+        side_length = Int(side_length_float)
+    end
 
     map_array = fill(' ', (maximum(length.(map_lines)), length(map_lines)))
-    @show size(map_array)
     for (row, line) ∈ enumerate(split(map_string, "\n"))
         for (col, c) ∈ enumerate(line)
             if c != ' '
@@ -243,7 +275,7 @@ function parse_input2(s)
         end
     end
 
-    origins = get_origins(map_array)
+    origins = get_origins(side_length)
     cube = [parse_side(map_array, origin, side_length) for origin ∈ origins]
 
     cmds = parse_path(path_string)
@@ -278,8 +310,7 @@ end
 
 get_square(cube::CubeMap, position::CubePosition) = face(cube, position.face)[position.face_pos]
 
-const adjacency = build_adjacency()
-function wrap(position::CubePosition, side_length)
+function wrap(position::CubePosition, side_length, adjacency)
     curr_face, curr_edge = position.face, edge_reached(position.facing)
     dest_face, dest_edge = adjacency[(curr_face, curr_edge)]
     edge_diff = mod(Int(dest_edge) - Int(curr_edge), 4)
@@ -333,7 +364,7 @@ function wrap(position::CubePosition, side_length)
     return CubePosition(new_face_pos, dest_face, new_facing(dest_edge))
 end
 
-function step(cube::CubeMap, position::CubePosition, command::Cmd)
+function step(cube::CubeMap, position::CubePosition, command::Cmd, adjacency)
     if typeof(command) == Int
         δ = get_delta(position.facing)
         pos = position
@@ -342,7 +373,7 @@ function step(cube::CubeMap, position::CubePosition, command::Cmd)
             newpos = CubePosition(CartesianIndex(Tuple(pos.face_pos) .+ δ), pos.face, pos.facing)
             # Wrapping logic
             if !checkbounds(Bool, face(cube, newpos.face), newpos.face_pos)
-                newpos = wrap(pos, size(cube[1], 1))
+                newpos = wrap(pos, size(cube[1], 1), adjacency)
                 δ = get_delta(newpos.facing)
             end
             # Check if we're running into a wall and end early
@@ -389,12 +420,18 @@ end
 
 function part2(input = read(INPUT_PATH, String))
     cube, cmds = parse_input2(input)
+    adjacency = build_adjacency(size(cube[1], 1))
+
     pos = start_cube_position()
     positions = [pos]
     for cmd ∈ cmds
-        intermediates = step(cube, pos, cmd)
+        intermediates = step(cube, pos, cmd, adjacency)
         push!(positions, intermediates...)
-        pos = last(intermediates)
+        pos = if length(intermediates) > 0
+            last(intermediates)
+        else
+            pos
+        end
     end
     password(last(positions), size(cube[1], 1))
 end

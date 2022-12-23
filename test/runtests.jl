@@ -448,3 +448,10 @@ end
     @test AdventOfCode2022.Day21.part1(test_input) == 152
     @test AdventOfCode2022.Day21.part2(test_input) == 301
 end
+
+@testset "Day 22" begin
+    @test AdventOfCode2022.Day22.part1(AdventOfCode2022.Day22.test_input) == 6032
+    @test AdventOfCode2022.Day22.part2(AdventOfCode2022.Day22.test_input) == 5031
+    @test AdventOfCode2022.Day22.part1() == 191010
+    @test AdventOfCode2022.Day22.part2() == 55364
+end
